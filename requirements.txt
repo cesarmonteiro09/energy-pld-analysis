@@ -1,0 +1,19 @@
+# Data manipulation
+pandas>=2.2
+numpy>=1.26
+
+# Reading raw files (.parquet and legacy .xls)
+pyarrow>=14.0
+xlrd>=2.0.1
+
+# Visualization
+matplotlib>=3.9
+seaborn>=0.13
+
+# Statistics and modeling
+scipy>=1.11
+statsmodels>=0.14
+scikit-learn>=1.4
+
+# Jupyter kernel (VS Code notebooks)
+ipykernel>=6.29
