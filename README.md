@@ -58,9 +58,7 @@ energy-pld-analysis/
 > 🚧 *In progress. This section will be filled in as the analysis is completed.*
 
 - PLD in SE/CO is **61% higher** in the dry period than in the wet period (p-value = 0.007).
-- When EAR is below **XX%**, the average PLD is **R$ XXX/MWh**, versus **R$ XXX/MWh** when EAR is above **XX%**.
-- EAR and ENA together explain about **XX%** of the PLD variation (adjusted R²); adding thermal dispatch and load raises it to **XX%**.
-- The baseline model improves on the naive forecast by **XX%** (RMSE).
+
 
 ## ⚠️ Limitations
 
