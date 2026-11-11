@@ -58,6 +58,7 @@ energy-pld-analysis/
 > 🚧 *In progress. This section will be filled in as the analysis is completed.*
 
 - PLD in SE/CO is **61% higher** in the dry period than in the wet period (p-value = 0.007).
+- PLD When EAR is below **30%**, the average PLD is **R$ 317/MWh**, versus **R$ 69/MWh** when EAR is above **70%** (Mann-Whitney p < 0.0001; the latter is close to the regulatory price floor).
 
 
 ## ⚠️ Limitations
