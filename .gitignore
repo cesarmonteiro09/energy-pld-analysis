@@ -18,6 +18,7 @@ data/processed/*
 # Outputs
 outputs/*
 !outputs/.gitkeep
+!outputs/*.png
 
 # IDEs
 .vscode/
