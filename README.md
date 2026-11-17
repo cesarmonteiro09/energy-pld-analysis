@@ -1,6 +1,6 @@
 # What Drives Electricity Prices in the SE/CO Subsystem in Brazil's Free Energy Market? ⚡
 
-[![Python](https://img.shields.io/badge/Python-3.11%2B-blue.svg)](https://www.python.org/)
+[![Python](https://img.shields.io/badge/Python-3.15-blue.svg)](https://www.python.org/)
 [![Pandas](https://img.shields.io/badge/Pandas-Data%20Analysis-orange.svg)](https://pandas.pydata.org/)
 [![Status](https://img.shields.io/badge/Status-Analysis%20Complete-brightgreen.svg)](#-key-findings)
 
@@ -71,16 +71,16 @@ ONS data is licensed under CC-BY 4.0. Attribution: Operador Nacional do Sistema 
 
 **Expected files in `data/raw/`:**
 
-```
 data/raw/
-├── Historico_do_Preco_Medio_Mensal.xls                         # CCEE (PLD)
-├── CARGA_MENSAL.parquet                                        # ONS (load)
-├── EAR/EAR_DIARIO_SUBSISTEMA_<year>.parquet                    # ONS, 2017-2025
-├── ENA/ENA_DIARIO_SUBSISTEMA_<year>.parquet                    # ONS, 2017-2025
-└── Thermal Generation/GERACAO_TERMICA_DESPACHO_<year>.parquet  # ONS, 2017-2025
-```
+├── Historico_do_Preco_Medio_Mensal.xls                    # CCEE (PLD)
+├── CARGA_MENSAL.parquet                                   # ONS (load)
+├── EAR/EAR_DIARIO_SUBSISTEMA_<year>.parquet               # ONS, 2017-2025
+├── ENA/ENA_DIARIO_SUBSISTEMA_<year>.parquet               # ONS, 2017-2025
+└── Thermal Generation/
+    ├── GERACAO_TERMICA_DESPACHO_<year>.parquet            # ONS, 2017-2023 (yearly files)
+    └── GERACAO_TERMICA_DESPACHO-2_<year>_<month>.parquet  # ONS, 2024-01 to 2025-09 (monthly files)
 
-The CCEE Excel file states that its updates through that channel ended on October 1; the same price history is available on the CCEE Open Data portal.
+The CCEE Excel file states that its updates through that channel ended on October 1; the same price history is available on the [CCEE Open Data portal](https://dadosabertos.ccee.org.br/organization/preco_liquidacao_diferenca) (the link given in the spreadsheet itself).
 
 ## 📁 Project Structure
 
@@ -98,7 +98,7 @@ energy-pld-analysis/
 
 ## 📊 Key Analytical Steps
 
-1. **Data Engineering & EDA:** reading five independent sources, filtering SE/CO, converting non-numeric values and removing placeholder rows, aligning the time index (daily and monthly sources to a common monthly frequency), and Pearson/Spearman correlation analysis.
+1. **Data Engineering & EDA:** reading five independent sources, filtering SE/CO, converting non-numeric values and removing placeholder rows, aligning the time index (daily and monthly sources to a common monthly frequency), Pearson/Spearman and year-over-year correlations, a lagged ENA-to-EAR correlation, and ADF/KPSS stationarity tests.
 2. **Statistical Analysis:** hypothesis testing (Mann-Whitney for dry vs. wet periods, Kruskal-Wallis across EAR bands), bootstrap confidence intervals, and multiple linear regression (`statsmodels`, with autocorrelation-robust HAC standard errors) with a multicollinearity check (VIF). The regression is fitted first with EAR and ENA, then with thermal dispatch and load added, to measure the extra explanatory power. Robustness checks exclude the floor years (2022-2024).
 3. **Baseline Forecasting Model:** one-month-ahead forecasts with a walk-forward (expanding window) evaluation from January 2021 on. Two linear regressions (EAR + ENA of the previous month; and the same plus the previous PLD) are compared against a naive forecast (previous month's PLD) using MAE and RMSE. Thermal dispatch is left out because it is not known before the price.
 
@@ -108,7 +108,7 @@ energy-pld-analysis/
 - Part of the data is **daily** (EAR, ENA and thermal dispatch) while the PLD and load are **monthly**, so everything is aligned to monthly frequency, which limits the number of observations (105 months in total).
 - Before 2021 the PLD was set weekly by load level; only its monthly average is used here, so the analysis is not valid at finer time granularity.
 - The regression R² values are **in-sample**. The out-of-sample evidence is the forecasting evaluation (Q3), which covers only 57 months (21 when the floor years are excluded), applies no significance test to the error differences, and shows that all models react to spikes one month late.
-- Thermal dispatch is a **consequence** of the PLD (it follows the marginal cost of operation), so its association with the price is partly mechanical. It is used as a diagnostic in the explanatory model and left out of the forecasting model. It also uses the **programmed** dispatch, not the verified generation.
+- Thermal dispatch is a **consequence** of the PLD (it follows the marginal cost of operation), so its association with the price is partly mechanical. It is used as a diagnostic in the explanatory model and left out of the forecasting model. It also uses the **programmed** dispatch rather than the verified generation; the two are almost identical at monthly frequency (correlation 0.998; verified/programmed ratio between 0.92 and 1.08).
 - The study looks at a single subsystem. Prices are coupled across submarkets, so flows to and from the South, Northeast and North are ignored, as are other drivers such as wind and solar generation and the fuel cost of thermal plants. These omissions help explain why a large share of the variation is left unexplained.
 - Correlation does not imply causation. The models describe associations in historical data, not a causal mechanism.
 - Hydrological series may be revised by ONS; results reflect the data on the download date above.
@@ -122,7 +122,7 @@ energy-pld-analysis/
    cd energy-pld-analysis
    ```
 
-2. Create and activate a virtual environment (Python 3.11+; developed with Python 3.15):
+2. Create and activate a virtual environment (tested with Python 3.15):
 
    ```powershell
    # Windows (PowerShell)
@@ -156,7 +156,7 @@ energy-pld-analysis/
 - [x] Statistical tests and regression (Q1 and Q2)
 - [x] Baseline forecasting model vs. naive benchmark (Q3)
 - [ ] Flag the months at the regulatory floor and ceiling and use the flag in the robustness checks
-- [ ] Test lagged relationships between PLD, EAR and ENA
+- [x] Test lagged relationships between PLD, EAR and ENA
 - [ ] Test the significance of the forecast error differences and add a seasonal naive benchmark
 - [ ] Add daily/hourly PLD to increase the number of observations
 - [ ] Write the final storytelling (article) and publish the key findings
@@ -170,3 +170,4 @@ Data: CCEE and ONS open data (CC-BY 4.0 for ONS), used here for educational and 
 ## 👤 Author
 
 Built by [@cesarmonteiro09](https://github.com/cesarmonteiro09) as a data portfolio project. Feedback and suggestions are welcome through issues.
+   
