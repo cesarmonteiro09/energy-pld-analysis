@@ -23,3 +23,8 @@ outputs/*
 # IDEs
 .vscode/
 .idea/
+
+# OS files and secrets
+.DS_Store
+Thumbs.db
+.env
