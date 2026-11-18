@@ -37,7 +37,7 @@ The highest band sits at the regulatory price floor, so part of the contrast ref
 
 <p align="center"><img src="outputs/boxplot_pld_by_ear_band.png" alt="PLD by EAR band" width="600"></p>
 
-**Q2: Explanatory power.** EAR and ENA together explain about **42%** of the PLD variation (adjusted R² = 0.416; each +1,000 MWmês of EAR is associated with R$ 2.08/MWh lower PLD, and each +1,000 MWmed of ENA with R$ 2.93/MWh lower). Adding thermal dispatch and load raises it to **55%**, almost entirely due to thermal dispatch, which is a *consequence* of the price and therefore partly mechanical. System load adds nothing (p = 0.90). Excluding the floor years (2022-2024), the figures are **31%** and **42%**: the headline number is flattered by months in which a flat floor price coincides with full reservoirs.
+**Q2: Explanatory power.** EAR and ENA together explain about **42%** of the PLD variation (adjusted R² = 0.416; each +1,000 MWmês of EAR is associated with R$ 2.08/MWh lower PLD, and each +1,000 MWmed of ENA with R$ 2.93/MWh lower). Adding thermal dispatch and load raises it to **55%**, almost entirely due to thermal dispatch, which is a which is jointly determined with the price and therefore partly mechanical. System load adds nothing (p = 0.90). Excluding the floor years (2022-2024), the figures are **31%** and **42%**: the headline number is flattered by months in which a flat floor price coincides with full reservoirs.
 
 <p align="center"><img src="outputs/time_series_pld_ear_thermal.png" alt="PLD, EAR and thermal generation" width="600"></p>
 
@@ -71,6 +71,9 @@ ONS data is licensed under CC-BY 4.0. Attribution: Operador Nacional do Sistema 
 
 **Expected files in `data/raw/`:**
 
+**Expected files in `data/raw/`:**
+
+```
 data/raw/
 ├── Historico_do_Preco_Medio_Mensal.xls                    # CCEE (PLD)
 ├── CARGA_MENSAL.parquet                                   # ONS (load)
@@ -79,6 +82,7 @@ data/raw/
 └── Thermal Generation/
     ├── GERACAO_TERMICA_DESPACHO_<year>.parquet            # ONS, 2017-2023 (yearly files)
     └── GERACAO_TERMICA_DESPACHO-2_<year>_<month>.parquet  # ONS, 2024-01 to 2025-09 (monthly files)
+```
 
 The CCEE Excel file states that its updates through that channel ended on October 1; the same price history is available on the [CCEE Open Data portal](https://dadosabertos.ccee.org.br/organization/preco_liquidacao_diferenca) (the link given in the spreadsheet itself).
 
@@ -100,7 +104,7 @@ energy-pld-analysis/
 
 1. **Data Engineering & EDA:** reading five independent sources, filtering SE/CO, converting non-numeric values and removing placeholder rows, aligning the time index (daily and monthly sources to a common monthly frequency), Pearson/Spearman and year-over-year correlations, a lagged ENA-to-EAR correlation, and ADF/KPSS stationarity tests.
 2. **Statistical Analysis:** hypothesis testing (Mann-Whitney for dry vs. wet periods, Kruskal-Wallis across EAR bands), bootstrap confidence intervals, and multiple linear regression (`statsmodels`, with autocorrelation-robust HAC standard errors) with a multicollinearity check (VIF). The regression is fitted first with EAR and ENA, then with thermal dispatch and load added, to measure the extra explanatory power. Robustness checks exclude the floor years (2022-2024).
-3. **Baseline Forecasting Model:** one-month-ahead forecasts with a walk-forward (expanding window) evaluation from January 2021 on. Two linear regressions (EAR + ENA of the previous month; and the same plus the previous PLD) are compared against a naive forecast (previous month's PLD) using MAE and RMSE. Forecasts are not allowed to fall below the lowest PLD seen in the training window.Thermal dispatch is left out because it is not known before the price.
+3. **Baseline Forecasting Model:** one-month-ahead forecasts with a walk-forward (expanding window) evaluation from January 2021 on. Two linear regressions (EAR + ENA of the previous month; and the same plus the previous PLD) are compared against a naive forecast (previous month's PLD) using MAE and RMSE. Forecasts are not allowed to fall below the lowest PLD seen in the training window. Thermal dispatch is left out because it is not known before the price.
 
 ## ⚠️ Limitations
 
@@ -108,7 +112,7 @@ energy-pld-analysis/
 - Part of the data is **daily** (EAR, ENA and thermal dispatch) while the PLD and load are **monthly**, so everything is aligned to monthly frequency, which limits the number of observations (105 months in total).
 - Before 2021 the PLD was set weekly by load level; only its monthly average is used here, so the analysis is not valid at finer time granularity.
 - The regressions use the levels of the series. The stationarity tests in notebook 01 are inconclusive for EAR and ENA and indicate non-stationarity for load, so the estimates are read as descriptive associations. The HAC standard errors account for autocorrelation in the residuals, but do not rule out a spurious relationship between trending series.
-- Thermal dispatch is a **consequence** of the PLD (it follows the marginal cost of operation), so its association with the price is partly mechanical. It is used as a diagnostic in the explanatory model and left out of the forecasting model. It also uses the **programmed** dispatch rather than the verified generation; the two are almost identical at monthly frequency (correlation 0.998; verified/programmed ratio between 0.92 and 1.08).
+- Thermal dispatch and the PLD are **jointly determined** (both follow the marginal cost of operation set by the operational planning models), so their association is partly mechanical. It is used as a diagnostic in the explanatory model and left out of the forecasting model. It also uses the **programmed** dispatch rather than the verified generation; the two are almost identical at monthly frequency (correlation 0.998; verified/programmed ratio between 0.92 and 1.08).
 - The list of thermal plants in the ONS files grows from about 41 to 55-58 plants per hour in December 2024. The new plants generate almost nothing until June 2025 but account for 24-32% of the thermal dispatch in July-September 2025 (about 1.2-1.8 GW). Excluding them barely changes the correlation with the PLD (0.706 vs 0.699), so the series is kept as is, but the last three months are not strictly comparable with the rest of the sample.
 - The study looks at a single subsystem. Prices are coupled across submarkets, so flows to and from the South, Northeast and North are ignored, as is the fuel cost of thermal plants.
 - **Intermittent sources (wind and solar) are not included.** Their output changes the load that hydro and thermal plants have to serve (the net load) and therefore the dispatch and the PLD, and their weight in the system grew over the sample period. The models only see hydrology, thermal dispatch and total load, so the price variation caused by these sources stays in the unexplained share (about 58% in the baseline model), and the relationship estimated for the early years may not hold for the recent ones.
