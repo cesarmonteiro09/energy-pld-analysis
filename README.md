@@ -100,17 +100,18 @@ energy-pld-analysis/
 
 1. **Data Engineering & EDA:** reading five independent sources, filtering SE/CO, converting non-numeric values and removing placeholder rows, aligning the time index (daily and monthly sources to a common monthly frequency), Pearson/Spearman and year-over-year correlations, a lagged ENA-to-EAR correlation, and ADF/KPSS stationarity tests.
 2. **Statistical Analysis:** hypothesis testing (Mann-Whitney for dry vs. wet periods, Kruskal-Wallis across EAR bands), bootstrap confidence intervals, and multiple linear regression (`statsmodels`, with autocorrelation-robust HAC standard errors) with a multicollinearity check (VIF). The regression is fitted first with EAR and ENA, then with thermal dispatch and load added, to measure the extra explanatory power. Robustness checks exclude the floor years (2022-2024).
-3. **Baseline Forecasting Model:** one-month-ahead forecasts with a walk-forward (expanding window) evaluation from January 2021 on. Two linear regressions (EAR + ENA of the previous month; and the same plus the previous PLD) are compared against a naive forecast (previous month's PLD) using MAE and RMSE. Thermal dispatch is left out because it is not known before the price.
+3. **Baseline Forecasting Model:** one-month-ahead forecasts with a walk-forward (expanding window) evaluation from January 2021 on. Two linear regressions (EAR + ENA of the previous month; and the same plus the previous PLD) are compared against a naive forecast (previous month's PLD) using MAE and RMSE. Forecasts are not allowed to fall below the lowest PLD seen in the training window.Thermal dispatch is left out because it is not known before the price.
 
 ## ⚠️ Limitations
 
 - The PLD has a regulatory **floor and ceiling** that change every year (for example, a structural ceiling of R$ 583.88/MWh in 2021 and floors of R$ 55.70, R$ 69.04 and R$ 61.07/MWh in 2022, 2023 and 2024, all visible in the data). Months at these limits do not reflect supply and demand, so the price is censored and a linear coefficient understates its relationship with EAR. The robustness checks exclude 2022-2024 as a block, which also removes some uncensored months (such as the late-2024 spike); flagging individual months at the limits is a natural improvement.
 - Part of the data is **daily** (EAR, ENA and thermal dispatch) while the PLD and load are **monthly**, so everything is aligned to monthly frequency, which limits the number of observations (105 months in total).
 - Before 2021 the PLD was set weekly by load level; only its monthly average is used here, so the analysis is not valid at finer time granularity.
-- The regression R² values are **in-sample**. The out-of-sample evidence is the forecasting evaluation (Q3), which covers only 57 months (21 when the floor years are excluded), applies no significance test to the error differences, and shows that all models react to spikes one month late.
+- The regressions use the levels of the series. The stationarity tests in notebook 01 are inconclusive for EAR and ENA and indicate non-stationarity for load, so the estimates are read as descriptive associations. The HAC standard errors account for autocorrelation in the residuals, but do not rule out a spurious relationship between trending series.
 - Thermal dispatch is a **consequence** of the PLD (it follows the marginal cost of operation), so its association with the price is partly mechanical. It is used as a diagnostic in the explanatory model and left out of the forecasting model. It also uses the **programmed** dispatch rather than the verified generation; the two are almost identical at monthly frequency (correlation 0.998; verified/programmed ratio between 0.92 and 1.08).
 - The list of thermal plants in the ONS files grows from about 41 to 55-58 plants per hour in December 2024. The new plants generate almost nothing until June 2025 but account for 24-32% of the thermal dispatch in July-September 2025 (about 1.2-1.8 GW). Excluding them barely changes the correlation with the PLD (0.706 vs 0.699), so the series is kept as is, but the last three months are not strictly comparable with the rest of the sample.
-- The study looks at a single subsystem. Prices are coupled across submarkets, so flows to and from the South, Northeast and North are ignored, as are other drivers such as wind and solar generation and the fuel cost of thermal plants. These omissions help explain why a large share of the variation is left unexplained.
+- The study looks at a single subsystem. Prices are coupled across submarkets, so flows to and from the South, Northeast and North are ignored, as is the fuel cost of thermal plants.
+- **Intermittent sources (wind and solar) are not included.** Their output changes the load that hydro and thermal plants have to serve (the net load) and therefore the dispatch and the PLD, and their weight in the system grew over the sample period. The models only see hydrology, thermal dispatch and total load, so the price variation caused by these sources stays in the unexplained share (about 58% in the baseline model), and the relationship estimated for the early years may not hold for the recent ones.
 - Correlation does not imply causation. The models describe associations in historical data, not a causal mechanism.
 - Hydrological series may be revised by ONS; results reflect the data on the download date above.
 
@@ -159,6 +160,8 @@ energy-pld-analysis/
 - [ ] Flag the months at the regulatory floor and ceiling and use the flag in the robustness checks
 - [x] Test lagged relationships between PLD, EAR and ENA
 - [ ] Test the significance of the forecast error differences and add a seasonal naive benchmark
+- [ ] Add wind and solar generation as explanatory variables (net load)
+- [ ] Repeat the regressions in first differences and on deseasonalized data
 - [ ] Add daily/hourly PLD to increase the number of observations
 - [ ] Write the final storytelling (article) and publish the key findings
 - [ ] Build a Power BI dashboard with the same data (Project 2)
